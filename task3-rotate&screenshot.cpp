@@ -408,8 +408,20 @@ private:
 int main()
 {
     MyViewer aViewer;
+
+    aViewer.SaveSnapshot("snap1.png");
+
     aViewer.rotateAfterDelay(1000);
-    aViewer.SaveSnapshot("snap.png");
+
+    aViewer.SaveSnapshot("snap2.png");
+
+    aViewer.rotateAfterDelay(1000);
+
+    aViewer.SaveSnapshot("snap3.png");
+
+    aViewer.rotateAfterDelay(1000);
+
+    aViewer.SaveSnapshot("snap4.png");
 
     for (;;) // message loop
     {
