@@ -55,6 +55,9 @@
 #include <Standard.hxx>
 #include <stdio.h>
 #include <Image_Format.hxx>
+#include <C:\Users\Satyam\Downloads\opencv\build\include\opencv2\core.hpp>
+#include <C:\Users\Satyam\Downloads\opencv\build\include\opencv2\imgcodecs.hpp>
+#include <C:\Users\Satyam\Downloads\opencv\build\include\opencv2\opencv.hpp>
 
 TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeight,
     const Standard_Real myThickness)
@@ -193,11 +196,6 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
     return aRes;
 }
 
-#include <C:\Users\Satyam\Downloads\opencv\build\include\opencv2\core.hpp>
-#include <C:\Users\Satyam\Downloads\opencv\build\include\opencv2\imgcodecs.hpp>
-#include <C:\Users\Satyam\Downloads\opencv\build\include\opencv2\opencv.hpp>
-
-
 class MyViewer : public AIS_ViewController
 {
 public:
@@ -245,20 +243,17 @@ public:
     }
 
     void rotateAfterDelay(int delay) {
-        // Sleep for the specified delay
         std::this_thread::sleep_for(std::chrono::milliseconds(delay));
-
-        // Rotate view after delay
-        myView->Rotate(0.5, 0.5, 0.5, Standard_True);
+        myView->Rotate(V3d_Z, M_PI/2.0, Standard_True);
     }
 
-    void SaveSnapshot(const char* filename) {
+    void SaveSnapshot(std::string filename) {
         if (myView.IsNull())
             return;
 
         // Provide dimensions for the image
-        int width = 800;  // Example width
-        int height = 600; // Example height
+        int width = 1000;  
+        int height = 1000; 
 
         // Create a new pixmap with the specified dimensions and RGB format
         Image_PixMap aPixmap;
@@ -405,23 +400,18 @@ private:
     Handle(V3d_View) myView;
 };
 
+#include <string>
+#include <cmath>
+
 int main()
 {
-    MyViewer aViewer;
+    MyViewer v;
 
-    aViewer.SaveSnapshot("snap1.png");
-
-    aViewer.rotateAfterDelay(1000);
-
-    aViewer.SaveSnapshot("snap2.png");
-
-    aViewer.rotateAfterDelay(1000);
-
-    aViewer.SaveSnapshot("snap3.png");
-
-    aViewer.rotateAfterDelay(1000);
-
-    aViewer.SaveSnapshot("snap4.png");
+    for (int i = 1; i <= 5; i++) {
+        std::string filename = "snap" + std::to_string(i) + ".png"; 
+        v.SaveSnapshot(filename);
+        v.rotateAfterDelay(0);
+    }
 
     for (;;) // message loop
     {
