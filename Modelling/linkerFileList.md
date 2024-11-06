@@ -1,3 +1,6 @@
+### The following is the list of linker files required for avoiding any error in the build process in IDEs such as Visual Studio and CLion:
+
+```
     TKBin.lib
     TKBinL.lib
     TKBinTObj.lib
@@ -59,3 +62,4 @@
     TKXmlXCAF.lib
     TKXSBase.lib
     TKXSDRAW.lib
+```

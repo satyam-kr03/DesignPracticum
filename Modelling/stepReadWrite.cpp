@@ -1,3 +1,5 @@
+// Description: This program demonstrates how to read a STEP file, make any modifications to it, and write it to a new STEP file.
+
 #include "Viewer.h"
 
 #include <BRepTools.hxx>
@@ -55,51 +57,12 @@
 #include <Standard.hxx>
 #include <stdio.h>
 #include <Image_Format.hxx>
-#include <Prs3d_LineAspect.hxx>
-#include <AIS_Shape.hxx>
-#include <AIS_InteractiveObject.hxx>
-#include <AIS_ListOfInteractive.hxx>
-#include <BRepBuilderAPI_Copy.hxx>
-#include <BRepBuilderAPI_MakeShell.hxx>
-#include <BRepBuilderAPI_MakeSolid.hxx>
-#include <Graphic3d_Aspects.hxx>
-
-TopoDS_Shape MakeCube(const Standard_Real size, const Standard_Boolean center = Standard_True, const Standard_Real xSize = 0.0, const Standard_Real ySize = 0.0, const Standard_Real zSize = 0.0)
-{
-    gp_Pnt origin(0.0, 0.0, 0.0); // Assuming origin is at (0,0,0)
-    BRepPrimAPI_MakeBox box(origin, size, size, size);
-    box.Build();
-    TopoDS_Solid mySolid = box.Solid();
-    // Compute offsets based on centering
-    if (center) {
-        if (xSize != 0.0) {
-            origin.SetX(origin.X() - xSize / 2.0);
-        }
-        if (ySize != 0.0) {
-            origin.SetY(origin.Y() - ySize / 2.0);
-        }
-        if (zSize != 0.0) {
-            origin.SetZ(origin.Z() - zSize / 2.0);
-        }
-    }
-    return mySolid;
-}
-
-TopoDS_Solid MakeSphere(const Standard_Real radius) {
-    gp_Pnt origin(0.0, 0.0, 0.0); // Assuming origin is at (0,0,0)
-    BRepPrimAPI_MakeSphere sphere(origin, radius);
-    sphere.Build();
-    if (!sphere.IsDone()) {
-        // Handle error
-        std::cerr << "Failed to create sphere." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    TopoDS_Solid mySolid = TopoDS::Solid(sphere.Shape());
-    return mySolid;
-}
+#include <C:\Users\Satyam\Downloads\opencv\build\include\opencv2\core.hpp>
+#include <C:\Users\Satyam\Downloads\opencv\build\include\opencv2\imgcodecs.hpp>
+#include <C:\Users\Satyam\Downloads\opencv\build\include\opencv2\opencv.hpp>
 
 TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeight,
-    const Standard_Real myThickness)
+                        const Standard_Real myThickness)
 {
     // Profile : Define Support Points
     gp_Pnt aPnt1(-myWidth / 2., 0, 0);
@@ -141,9 +104,10 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
     // Body : Apply Fillets
     BRepFilletAPI_MakeFillet mkFillet(myBody);
     TopExp_Explorer anEdgeExplorer(myBody, TopAbs_EDGE);
-    while (anEdgeExplorer.More()) {
+    while (anEdgeExplorer.More())
+    {
         TopoDS_Edge anEdge = TopoDS::Edge(anEdgeExplorer.Current());
-        //Add edge to fillet algorithm
+        // Add edge to fillet algorithm
         mkFillet.Add(myThickness / 12., anEdge);
         anEdgeExplorer.Next();
     }
@@ -164,18 +128,21 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
     myBody = BRepAlgoAPI_Fuse(myBody, myNeck);
 
     // Body : Create a Hollowed Solid
-    TopoDS_Face   faceToRemove;
+    TopoDS_Face faceToRemove;
     Standard_Real zMax = -1;
 
-    for (TopExp_Explorer aFaceExplorer(myBody, TopAbs_FACE); aFaceExplorer.More(); aFaceExplorer.Next()) {
+    for (TopExp_Explorer aFaceExplorer(myBody, TopAbs_FACE); aFaceExplorer.More(); aFaceExplorer.Next())
+    {
         TopoDS_Face aFace = TopoDS::Face(aFaceExplorer.Current());
-        // Check if <aFace> is the top face of the bottle's neck 
+        // Check if <aFace> is the top face of the bottle's neck
         Handle(Geom_Surface) aSurface = BRep_Tool::Surface(aFace);
-        if (aSurface->DynamicType() == STANDARD_TYPE(Geom_Plane)) {
+        if (aSurface->DynamicType() == STANDARD_TYPE(Geom_Plane))
+        {
             Handle(Geom_Plane) aPlane = Handle(Geom_Plane)::DownCast(aSurface);
             gp_Pnt aPnt = aPlane->Location();
             Standard_Real aZ = aPnt.Z();
-            if (aZ > zMax) {
+            if (aZ > zMax)
+            {
                 zMax = aZ;
                 faceToRemove = aFace;
             }
@@ -217,7 +184,7 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
     BRepLib::BuildCurves3d(threadingWire1);
     BRepLib::BuildCurves3d(threadingWire2);
 
-    // Create Threading 
+    // Create Threading
     BRepOffsetAPI_ThruSections aTool(Standard_True);
     aTool.AddWire(threadingWire1);
     aTool.AddWire(threadingWire2);
@@ -225,7 +192,7 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
 
     TopoDS_Shape myThreading = aTool.Shape();
 
-    // Building the Resulting Compound 
+    // Building the Resulting Compound
     TopoDS_Compound aRes;
     BRep_Builder aBuilder;
     aBuilder.MakeCompound(aRes);
@@ -234,32 +201,6 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
 
     return aRes;
 }
-
-#include <V3d_DirectionalLight.hxx>
-#include <BRepBuilderAPI_Transform.hxx>
-#include <gp_Trsf.hxx>
-#include <Graphic3d_AspectLine3d.hxx>
-#include <AIS_Shape.hxx>
-#include <AIS_InteractiveContext.hxx>
-#include <Prs3d_Drawer.hxx>
-#include <Prs3d_LineAspect.hxx>
-#include <AIS_ListIteratorOfListOfInteractive.hxx>
-#include <Prs3d_LineAspect.hxx>
-#include <AIS_ListIteratorOfListOfInteractive.hxx>
-#include <AIS_ColoredDrawer.hxx>
-#include <WNT_Window.hxx>
-#include <WNT_WClass.hxx>
-#include <TopTools_IndexedMapOfShape.hxx>
-#include <TopoDS.hxx>
-#include <TopoDS_Shape.hxx>
-#include <TopExp.hxx>
-#include <Prs3d_LineAspect.hxx>
-#include <AIS_Shape.hxx>
-#include <AIS_InteractiveObject.hxx>
-#include <AIS_ListOfInteractive.hxx>
-#include <Graphic3d_TypeOfShadingModel.hxx>
-#include <V3d_TypeOfShadingModel.hxx>
-
 
 class MyViewer : public AIS_ViewController
 {
@@ -283,10 +224,11 @@ public:
         Handle(WNT_WClass) aWinClass =
             new WNT_WClass(aClassName.ToCString(), &windowProcWrapper, 0);
         Handle(WNT_Window) aWindow = new WNT_Window("OCCT Viewer", aWinClass,
-            WS_OVERLAPPEDWINDOW,
-            100, 100, 512, 512, Quantity_NOC_BLACK);
+                                                    WS_OVERLAPPEDWINDOW,
+                                                    100, 100, 512, 512, Quantity_NOC_BLACK);
         ::SetWindowLongPtrW((HWND)aWindow->NativeHandle(), GWLP_USERDATA, (LONG_PTR)this);
         myView->SetImmediateUpdate(false);
+        myView->SetShadingModel(Graphic3d_TOSM_FRAGMENT);
         myView->SetWindow(aWindow);
         myView->SetBackgroundColor(Quantity_NOC_GRAY50);
         myView->Camera()->SetProjectionType(Graphic3d_Camera::Projection_Orthographic);
@@ -297,58 +239,23 @@ public:
         myContext = new AIS_InteractiveContext(aViewer);
 
         // Modify here to display your own TopoDS_Shape object
-        TopoDS_Shape aShape = MakeCube(5.0);
-        //TopoDS_Shape aShape = MakeBottle(50, 70, 30);
-        //TopoDS_Solid aShape = MakeSphere(50);
-
-        // Create AIS_Shape object and display it
-        Handle(AIS_Shape) aShapePrs = new AIS_Shape(aShape);
+        TopoDS_Shape aShape = MakeBottle(50, 70, 30);
+        Handle(AIS_InteractiveObject) aShapePrs = new AIS_Shape(aShape);
         myContext->Display(aShapePrs, AIS_Shaded, 0, false);
-
         myView->FitAll(0.01, false);
 
-        aWindow->Map();
+        // aWindow->Map();
         myView->Redraw();
     }
 
-    void SetShading(Graphic3d_TypeOfShadingModel shading) {
-        myView->SetShadingModel(shading);
-    }
-
-    void SetShapeMaterial(Graphic3d_MaterialAspect aMaterialAspect, Standard_Real aTransparency)
+    void rotateAfterDelay(int delay)
     {
-        // Retrieve the displayed shape
-        AIS_ListOfInteractive aList;
-        myContext->DisplayedObjects(aList);
-
-        // Iterate through displayed objects and set material for each shape
-        for (AIS_ListIteratorOfListOfInteractive it(aList); it.More(); it.Next())
-        {
-            Handle(AIS_InteractiveObject) anObj = it.Value();
-            if (anObj->IsKind(STANDARD_TYPE(AIS_Shape)))
-            {
-                Handle(AIS_Shape) aShape = Handle(AIS_Shape)::DownCast(anObj);
-                if (!aShape.IsNull())
-                {
-                    // Set material aspect
-                    aShape->SetMaterial(aMaterialAspect);
-
-                    // Set transparency
-                    aShape->SetTransparency(aTransparency);
-                }
-            }
-        }
-
-        // Redraw the view
-        myView->Redraw();
-    }
-
-    void rotateAfterDelay(int delay) {
         std::this_thread::sleep_for(std::chrono::milliseconds(delay));
         myView->Rotate(V3d_Z, M_PI / 2.0, Standard_True);
     }
 
-    void SaveSnapshot(std::string filename) {
+    void SaveSnapshot(std::string filename)
+    {
         if (myView.IsNull())
             return;
 
@@ -359,159 +266,20 @@ public:
         myView->Dump(filename.c_str(), Graphic3d_BT_RGB);
     }
 
-    void SetBackgroundColor(const Quantity_Color& color)
-    {
-        if (!myView.IsNull())
-        {
-            myView->SetBackgroundColor(color);
-            myView->Redraw();
-        }
-    }
-
-    void SetObjectColor(const Quantity_Color& color)
-    {
-        if (!myContext.IsNull())
-        {
-            AIS_ListOfInteractive aList;
-            myContext->DisplayedObjects(aList);
-
-            TopoDS_Compound newShape;
-            BRep_Builder builder;
-
-            builder.MakeCompound(newShape);
-
-            for (AIS_ListIteratorOfListOfInteractive anIt(aList); anIt.More(); anIt.Next())
-            {
-                Handle(AIS_Shape) aShape = Handle(AIS_Shape)::DownCast(anIt.Value());
-                if (!aShape.IsNull())
-                {
-                    TopoDS_Shape myShape = aShape->Shape();
-                    TopTools_IndexedMapOfShape faces;
-                    TopExp::MapShapes(myShape, TopAbs_FACE, faces);
-                    for (int i = 1; i <= faces.Extent() - 1; i++) {
-                        TopoDS_Face face = TopoDS::Face(faces(i));
-                        Handle(AIS_Shape) faceShape = new AIS_Shape(face);
-                        faceShape->SetColor(color); // Set color for the face
-                        builder.Add(newShape, face); // Add the face to the new shape
-                    }
-                    myContext->Remove(aShape, Standard_True); // Remove the original shape
-                }
-            }
-
-            Handle(AIS_Shape) newAIS = new AIS_Shape(newShape);
-            myContext->Display(newAIS, Standard_True); // Display the new shape with colored faces
-            myView->Redraw();
-        }
-    }
-
-    void SetBgGradientStyle(const Aspect_GradientFillMethod theMethod = Aspect_GradientFillMethod_Horizontal,
-        const Standard_Boolean theToUpdate = Standard_False)
-    {
-        if (!myView.IsNull())
-        {
-            myView->SetBgGradientStyle(theMethod, theToUpdate);
-            myView->Redraw();
-        }
-    }
-
-    void SetEdgeThickness(const Standard_Real thickness)
-    {
-        if (!myContext.IsNull())
-        {
-            AIS_ListOfInteractive aList;
-            myContext->DisplayedObjects(aList);
-
-            for (AIS_ListIteratorOfListOfInteractive anIt(aList); anIt.More(); anIt.Next())
-            {
-                Handle(AIS_Shape) aShape = Handle(AIS_Shape)::DownCast(anIt.Value());
-                if (!aShape.IsNull()) 
-                {               
-                    Handle(Prs3d_Drawer) drawer = aShape->Attributes();
-                    Handle(Prs3d_LineAspect) lineAspect = drawer->LineAspect();          
-                    drawer->UnFreeBoundaryAspect()->SetWidth(thickness);
-                }
-            }
-            myView->Redraw();
-        }
-    }
-
-    void IncreaseEdgeThickness()
-    {
-        AIS_ListOfInteractive aList;
-        myContext->DisplayedObjects(aList);
- 
-        for (AIS_ListIteratorOfListOfInteractive anIt(aList); anIt.More(); anIt.Next())
-        {
-            Handle(AIS_Shape) aShape = Handle(AIS_Shape)::DownCast(anIt.Value());
-            if (!aShape.IsNull())
-            {
-                Handle(Prs3d_Drawer) drawer = aShape->Attributes();
-                Handle(Prs3d_LineAspect) lineAspect = drawer->LineAspect();
-
-                for (int i = 1; i <= 12; i++)
-                {
-                    drawer->UnFreeBoundaryAspect()->SetWidth(i*3);
-                    aShape->Redisplay(Standard_True);
-                }
-            }
-        }
-
-        myView->Redraw();
-    }
-
-    void SetTransparency(Standard_Real transparency)
-    {
-        if (!myContext.IsNull())
-        {
-            AIS_ListOfInteractive aList;
-            myContext->DisplayedObjects(aList);
-
-            for (AIS_ListIteratorOfListOfInteractive anIt(aList); anIt.More(); anIt.Next())
-            {
-                Handle(AIS_Shape) aShape = Handle(AIS_Shape)::DownCast(anIt.Value());
-                if (!aShape.IsNull())
-                {
-                    Handle(Prs3d_Drawer) aDrawer = aShape->Attributes();
-                    aDrawer->SetTransparency(transparency);
-                    aShape->SetAttributes(aDrawer);
-                }
-            }
-            myView->Redraw();
-        }
-    }
-
-    void SetDirectionalLight(const Quantity_Color& color, const Graphic3d_Vec3& direction)
-    {
-        if (!myView.IsNull())
-        {
-            myView->SetLightOn(); // Ensure lighting is enabled
-
-            // Create directional light
-            Handle(V3d_DirectionalLight) directionalLight = new V3d_DirectionalLight();
-            directionalLight->SetColor(color);
-            //directionalLight->SetDirection(direction);
-
-            // Set directional light on the viewer
-            myView->Viewer()->SetLightOn(directionalLight);
-            myView->Redraw();
-        }
-    }
-
-
 private:
     //! Window message handler.
     static LRESULT WINAPI windowProcWrapper(HWND theWnd, UINT theMsg,
-        WPARAM theParamW, LPARAM theParamL)
+                                            WPARAM theParamW, LPARAM theParamL)
     {
-        MyViewer* aThis = (MyViewer*)::GetWindowLongPtrW(theWnd, GWLP_USERDATA);
+        MyViewer *aThis = (MyViewer *)::GetWindowLongPtrW(theWnd, GWLP_USERDATA);
         return aThis != NULL
-            ? aThis->windowProc(theWnd, theMsg, theParamW, theParamL)
-            : ::DefWindowProcW(theWnd, theMsg, theParamW, theParamL);
+                   ? aThis->windowProc(theWnd, theMsg, theParamW, theParamL)
+                   : ::DefWindowProcW(theWnd, theMsg, theParamW, theParamL);
     }
 
     //! Window message handler.
     LRESULT WINAPI windowProc(HWND theWnd, UINT theMsg,
-        WPARAM theParamW, LPARAM theParamL)
+                              WPARAM theParamW, LPARAM theParamL)
     {
         switch (theMsg)
         {
@@ -559,9 +327,7 @@ private:
                 aButton = Aspect_VKeyMouse_RightButton;
                 break;
             }
-            if (theMsg == WM_LBUTTONDOWN
-                || theMsg == WM_MBUTTONDOWN
-                || theMsg == WM_RBUTTONDOWN)
+            if (theMsg == WM_LBUTTONDOWN || theMsg == WM_MBUTTONDOWN || theMsg == WM_RBUTTONDOWN)
             {
                 ::SetFocus(theWnd);
                 ::SetCapture(theWnd);
@@ -584,7 +350,7 @@ private:
             aCursor.cbSize = sizeof(aCursor);
             if (::GetCursorInfo(&aCursor) != FALSE)
             {
-                POINT aCursorPnt = { aCursor.ptScreenPos.x, aCursor.ptScreenPos.y };
+                POINT aCursorPnt = {aCursor.ptScreenPos.x, aCursor.ptScreenPos.y};
                 if (::ScreenToClient(theWnd, &aCursorPnt))
                 {
                     aPos.SetValues(aCursorPnt.x, aCursorPnt.y);
@@ -603,15 +369,15 @@ private:
             const double aDeltaF = double(aDelta) / double(WHEEL_DELTA);
             const Aspect_VKeyFlags aFlags = WNT_Window::MouseKeyFlagsFromEvent(theParamW);
             Graphic3d_Vec2i aPos(int(short(LOWORD(theParamL))),
-                int(short(HIWORD(theParamL))));
-            POINT aCursorPnt = { aPos.x(), aPos.y() };
+                                 int(short(HIWORD(theParamL))));
+            POINT aCursorPnt = {aPos.x(), aPos.y()};
             if (::ScreenToClient(theWnd, &aCursorPnt))
             {
                 aPos.SetValues(aCursorPnt.x, aCursorPnt.y);
             }
 
             AIS_ViewController::UpdateMouseScroll(Aspect_ScrollDelta(aPos, aDeltaF,
-                aFlags));
+                                                                     aFlags));
             AIS_ViewController::FlushViewEvents(myContext, myView, true);
             break;
         }
@@ -623,7 +389,6 @@ private:
         return 0;
     }
 
-
 private:
     Handle(AIS_InteractiveContext) myContext;
     Handle(V3d_View) myView;
@@ -631,54 +396,83 @@ private:
 
 #include <string>
 #include <cmath>
-#include <Prs3d_LineAspect.hxx>
-#include <AIS_Shape.hxx>
-#include <AIS_InteractiveObject.hxx>
-#include <AIS_ListOfInteractive.hxx>
-#include <TopoDS.hxx>
-#include <Graphic3d_Structure.hxx>
+#include <TDocStd_Document.hxx>
+#include <XCAFDoc_ShapeTool.hxx>
+#include <XCAFApp_Application.hxx>
+#include <XmlXCAFDrivers.hxx>
+#include <XmlXCAFDrivers.hxx>
+#include <XmlXCAFDrivers.hxx>
+#include <XCAFDoc_DocumentTool.hxx>
+#include <TopoDS_Solid.hxx>
+#include <TDataStd_Name.hxx>
+#include <STEPCAFControl_Writer.hxx>
+#include <XCAFDoc_ShapeTool.hxx>
+#include <XCAFDoc_ColorTool.hxx>
+#include <STEPCAFControl_Reader.hxx>
 
-#include <iostream>
-#include <chrono>
-
-class Timer {
-public:
-    Timer() : start_(std::chrono::high_resolution_clock::now()) {}
-
-    void reset() {
-        start_ = std::chrono::high_resolution_clock::now();
-    }
-
-    double elapsed() const {
-        auto now = std::chrono::high_resolution_clock::now();
-        return std::chrono::duration_cast<std::chrono::milliseconds>(now - start_).count();
-    }
-
-private:
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_;
-};
+// TopoDS_Shape someSolid = MakeBottle(50, 70, 30);
 
 int main()
-{ 
-    Graphic3d_TypeOfShadingModel shadings[] = { Graphic3d_TypeOfShadingModel_Phong, Graphic3d_TypeOfShadingModel_Gouraud, Graphic3d_TypeOfShadingModel_Pbr, Graphic3d_TypeOfShadingModel_Unlit};
-    Graphic3d_NameOfMaterial materials[] = { Graphic3d_NOM_GLASS, Graphic3d_NOM_PLASTIC, Graphic3d_NOM_SHINY_PLASTIC, Graphic3d_NOM_CHROME, Graphic3d_NOM_TRANSPARENT};
+{
+    // Reading
 
-    MyViewer v;
-    v.SetShading(Graphic3d_TypeOfShadingModel_Phong);
-    v.SetShapeMaterial(Graphic3d_NameOfMaterial_Bronze, 0);
-    v.IncreaseEdgeThickness();
+    STEPCAFControl_Reader stepReader;
+    std::string fileName = "bottle.step";
+    IFSelect_ReturnStatus status = stepReader.ReadFile(fileName.c_str());
 
-
-
-    for (;;) // message loop
+    if (status != IFSelect_RetDone)
     {
-        MSG aMsg = {};
-        if (GetMessageW(&aMsg, NULL, 0, 0) <= 0)
-        {
-            return 0;
-        }
-        TranslateMessage(&aMsg);
-        DispatchMessageW(&aMsg);
+        std::cerr << "Error: Unable to read STEP file." << std::endl;
+        return 1;
     }
+
+    TCollection_ExtendedString storageFormat("XmlOcaf");
+    Handle(TDocStd_Document) doc = new TDocStd_Document(storageFormat);
+    stepReader.Transfer(doc);
+
+    TopoDS_Shape loadedShape;
+    Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
+    if (!shapeTool.IsNull())
+    {
+        TDF_LabelSequence rootLabels;
+        shapeTool->GetFreeShapes(rootLabels);
+        if (rootLabels.Length() > 0)
+        {
+            loadedShape = shapeTool->GetShape(rootLabels.First());
+        }
+    }
+
+    // Writing
+
+    Handle(TDocStd_Document) _doc;
+    Handle(XCAFDoc_ShapeTool) _shapeTool;
+    Handle(XCAFApp_Application) _app = XCAFApp_Application::GetApplication();
+    XmlXCAFDrivers::DefineFormat(_app);
+    _app->NewDocument("XmlXCAF", _doc);
+    assert(XCAFDoc_DocumentTool::IsXCAFDocument(_doc));
+    _shapeTool = XCAFDoc_DocumentTool::ShapeTool(_doc->Main());
+
+    TopoDS_Shape someSolid = loadedShape;
+    TDF_Label shapeLabel = _shapeTool->AddShape(someSolid);
+    TDataStd_Name::Set(shapeLabel, TCollection_ExtendedString("Solid1"));
+
+    if (shapeLabel.IsNull())
+    {
+        std::cerr << "Error: Failed to add shape label." << std::endl;
+        return 1;
+    }
+
+    STEPCAFControl_Writer stepWriter;
+    stepWriter.Transfer(_doc, STEPControl_AsIs);
+    stepWriter.Transfer(shapeLabel, STEPControl_AsIs);
+
+    fileName = "bottle2.step";
+    Standard_Boolean writeStatus = stepWriter.Write(fileName.c_str());
+    if (!writeStatus)
+    {
+        std::cerr << "Error: Unable to write STEP file." << std::endl;
+        return 1;
+    }
+
     return 0;
 }

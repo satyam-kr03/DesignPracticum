@@ -1,3 +1,5 @@
+// Description: This code demonstrates how to save snapshots of a 3D model in OpenCascade without rendering it on the display.
+
 #include "Viewer.h"
 
 #include <BRepTools.hxx>
@@ -60,7 +62,7 @@
 #include <C:\Users\Satyam\Downloads\opencv\build\include\opencv2\opencv.hpp>
 
 TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeight,
-    const Standard_Real myThickness)
+                        const Standard_Real myThickness)
 {
     // Profile : Define Support Points
     gp_Pnt aPnt1(-myWidth / 2., 0, 0);
@@ -102,9 +104,10 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
     // Body : Apply Fillets
     BRepFilletAPI_MakeFillet mkFillet(myBody);
     TopExp_Explorer anEdgeExplorer(myBody, TopAbs_EDGE);
-    while (anEdgeExplorer.More()) {
+    while (anEdgeExplorer.More())
+    {
         TopoDS_Edge anEdge = TopoDS::Edge(anEdgeExplorer.Current());
-        //Add edge to fillet algorithm
+        // Add edge to fillet algorithm
         mkFillet.Add(myThickness / 12., anEdge);
         anEdgeExplorer.Next();
     }
@@ -125,18 +128,21 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
     myBody = BRepAlgoAPI_Fuse(myBody, myNeck);
 
     // Body : Create a Hollowed Solid
-    TopoDS_Face   faceToRemove;
+    TopoDS_Face faceToRemove;
     Standard_Real zMax = -1;
 
-    for (TopExp_Explorer aFaceExplorer(myBody, TopAbs_FACE); aFaceExplorer.More(); aFaceExplorer.Next()) {
+    for (TopExp_Explorer aFaceExplorer(myBody, TopAbs_FACE); aFaceExplorer.More(); aFaceExplorer.Next())
+    {
         TopoDS_Face aFace = TopoDS::Face(aFaceExplorer.Current());
-        // Check if <aFace> is the top face of the bottle's neck 
+        // Check if <aFace> is the top face of the bottle's neck
         Handle(Geom_Surface) aSurface = BRep_Tool::Surface(aFace);
-        if (aSurface->DynamicType() == STANDARD_TYPE(Geom_Plane)) {
+        if (aSurface->DynamicType() == STANDARD_TYPE(Geom_Plane))
+        {
             Handle(Geom_Plane) aPlane = Handle(Geom_Plane)::DownCast(aSurface);
             gp_Pnt aPnt = aPlane->Location();
             Standard_Real aZ = aPnt.Z();
-            if (aZ > zMax) {
+            if (aZ > zMax)
+            {
                 zMax = aZ;
                 faceToRemove = aFace;
             }
@@ -178,7 +184,7 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
     BRepLib::BuildCurves3d(threadingWire1);
     BRepLib::BuildCurves3d(threadingWire2);
 
-    // Create Threading 
+    // Create Threading
     BRepOffsetAPI_ThruSections aTool(Standard_True);
     aTool.AddWire(threadingWire1);
     aTool.AddWire(threadingWire2);
@@ -186,7 +192,7 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
 
     TopoDS_Shape myThreading = aTool.Shape();
 
-    // Building the Resulting Compound 
+    // Building the Resulting Compound
     TopoDS_Compound aRes;
     BRep_Builder aBuilder;
     aBuilder.MakeCompound(aRes);
@@ -218,8 +224,8 @@ public:
         Handle(WNT_WClass) aWinClass =
             new WNT_WClass(aClassName.ToCString(), &windowProcWrapper, 0);
         Handle(WNT_Window) aWindow = new WNT_Window("OCCT Viewer", aWinClass,
-            WS_OVERLAPPEDWINDOW,
-            100, 100, 512, 512, Quantity_NOC_BLACK);
+                                                    WS_OVERLAPPEDWINDOW,
+                                                    100, 100, 512, 512, Quantity_NOC_BLACK);
         ::SetWindowLongPtrW((HWND)aWindow->NativeHandle(), GWLP_USERDATA, (LONG_PTR)this);
         myView->SetImmediateUpdate(false);
         myView->SetShadingModel(Graphic3d_TOSM_FRAGMENT);
@@ -242,12 +248,14 @@ public:
         myView->Redraw();
     }
 
-    void rotateAfterDelay(int delay) {
+    void rotateAfterDelay(int delay)
+    {
         std::this_thread::sleep_for(std::chrono::milliseconds(delay));
         myView->Rotate(V3d_Z, M_PI / 2.0, Standard_True);
     }
 
-    void SaveSnapshot(std::string filename) {
+    void SaveSnapshot(std::string filename)
+    {
         if (myView.IsNull())
             return;
 
@@ -261,17 +269,17 @@ public:
 private:
     //! Window message handler.
     static LRESULT WINAPI windowProcWrapper(HWND theWnd, UINT theMsg,
-        WPARAM theParamW, LPARAM theParamL)
+                                            WPARAM theParamW, LPARAM theParamL)
     {
-        MyViewer* aThis = (MyViewer*)::GetWindowLongPtrW(theWnd, GWLP_USERDATA);
+        MyViewer *aThis = (MyViewer *)::GetWindowLongPtrW(theWnd, GWLP_USERDATA);
         return aThis != NULL
-            ? aThis->windowProc(theWnd, theMsg, theParamW, theParamL)
-            : ::DefWindowProcW(theWnd, theMsg, theParamW, theParamL);
+                   ? aThis->windowProc(theWnd, theMsg, theParamW, theParamL)
+                   : ::DefWindowProcW(theWnd, theMsg, theParamW, theParamL);
     }
 
     //! Window message handler.
     LRESULT WINAPI windowProc(HWND theWnd, UINT theMsg,
-        WPARAM theParamW, LPARAM theParamL)
+                              WPARAM theParamW, LPARAM theParamL)
     {
         switch (theMsg)
         {
@@ -319,9 +327,7 @@ private:
                 aButton = Aspect_VKeyMouse_RightButton;
                 break;
             }
-            if (theMsg == WM_LBUTTONDOWN
-                || theMsg == WM_MBUTTONDOWN
-                || theMsg == WM_RBUTTONDOWN)
+            if (theMsg == WM_LBUTTONDOWN || theMsg == WM_MBUTTONDOWN || theMsg == WM_RBUTTONDOWN)
             {
                 ::SetFocus(theWnd);
                 ::SetCapture(theWnd);
@@ -344,7 +350,7 @@ private:
             aCursor.cbSize = sizeof(aCursor);
             if (::GetCursorInfo(&aCursor) != FALSE)
             {
-                POINT aCursorPnt = { aCursor.ptScreenPos.x, aCursor.ptScreenPos.y };
+                POINT aCursorPnt = {aCursor.ptScreenPos.x, aCursor.ptScreenPos.y};
                 if (::ScreenToClient(theWnd, &aCursorPnt))
                 {
                     aPos.SetValues(aCursorPnt.x, aCursorPnt.y);
@@ -363,15 +369,15 @@ private:
             const double aDeltaF = double(aDelta) / double(WHEEL_DELTA);
             const Aspect_VKeyFlags aFlags = WNT_Window::MouseKeyFlagsFromEvent(theParamW);
             Graphic3d_Vec2i aPos(int(short(LOWORD(theParamL))),
-                int(short(HIWORD(theParamL))));
-            POINT aCursorPnt = { aPos.x(), aPos.y() };
+                                 int(short(HIWORD(theParamL))));
+            POINT aCursorPnt = {aPos.x(), aPos.y()};
             if (::ScreenToClient(theWnd, &aCursorPnt))
             {
                 aPos.SetValues(aCursorPnt.x, aCursorPnt.y);
             }
 
             AIS_ViewController::UpdateMouseScroll(Aspect_ScrollDelta(aPos, aDeltaF,
-                aFlags));
+                                                                     aFlags));
             AIS_ViewController::FlushViewEvents(myContext, myView, true);
             break;
         }
@@ -395,7 +401,8 @@ int main()
 {
     MyViewer v;
 
-    for (int i = 1; i <= 5; i++) {
+    for (int i = 1; i <= 5; i++)
+    {
         std::string filename = "snap" + std::to_string(i) + ".png";
         v.SaveSnapshot(filename);
         v.rotateAfterDelay(0);

@@ -1,3 +1,14 @@
+'''
+Description: This script demonstrates how to render an animation of a rotating camera around an imported OBJ model using Blender's Python API.
+
+Instructions:
+1. Set the file paths for the OBJ model and output directory.
+2. Run the script in Blender's Scripting workspace.
+3. The script will import the OBJ model, set up a rotating camera, add lighting, and render the animation as an MP4 video.
+'''
+
+
+
 import bpy
 import os
 import math

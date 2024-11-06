@@ -1,3 +1,5 @@
+// Description: This is the main file for the bottle shape example. It creates a bottle shape and displays it in the viewer on running a build successfully.
+
 #include "Viewer.h"
 
 #include <BRepTools.hxx>
@@ -26,9 +28,8 @@
 #include <Geom_Plane.hxx>
 #include <gp_Pnt.hxx>
 
-
 TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeight,
-    const Standard_Real myThickness)
+                        const Standard_Real myThickness)
 {
     // Profile : Define Support Points
     gp_Pnt aPnt1(-myWidth / 2., 0, 0);
@@ -70,9 +71,10 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
     // Body : Apply Fillets
     BRepFilletAPI_MakeFillet mkFillet(myBody);
     TopExp_Explorer anEdgeExplorer(myBody, TopAbs_EDGE);
-    while (anEdgeExplorer.More()) {
+    while (anEdgeExplorer.More())
+    {
         TopoDS_Edge anEdge = TopoDS::Edge(anEdgeExplorer.Current());
-        //Add edge to fillet algorithm
+        // Add edge to fillet algorithm
         mkFillet.Add(myThickness / 12., anEdge);
         anEdgeExplorer.Next();
     }
@@ -93,18 +95,21 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
     myBody = BRepAlgoAPI_Fuse(myBody, myNeck);
 
     // Body : Create a Hollowed Solid
-    TopoDS_Face   faceToRemove;
+    TopoDS_Face faceToRemove;
     Standard_Real zMax = -1;
 
-    for (TopExp_Explorer aFaceExplorer(myBody, TopAbs_FACE); aFaceExplorer.More(); aFaceExplorer.Next()) {
+    for (TopExp_Explorer aFaceExplorer(myBody, TopAbs_FACE); aFaceExplorer.More(); aFaceExplorer.Next())
+    {
         TopoDS_Face aFace = TopoDS::Face(aFaceExplorer.Current());
-        // Check if <aFace> is the top face of the bottle's neck 
+        // Check if <aFace> is the top face of the bottle's neck
         Handle(Geom_Surface) aSurface = BRep_Tool::Surface(aFace);
-        if (aSurface->DynamicType() == STANDARD_TYPE(Geom_Plane)) {
+        if (aSurface->DynamicType() == STANDARD_TYPE(Geom_Plane))
+        {
             Handle(Geom_Plane) aPlane = Handle(Geom_Plane)::DownCast(aSurface);
             gp_Pnt aPnt = aPlane->Location();
             Standard_Real aZ = aPnt.Z();
-            if (aZ > zMax) {
+            if (aZ > zMax)
+            {
                 zMax = aZ;
                 faceToRemove = aFace;
             }
@@ -146,7 +151,7 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
     BRepLib::BuildCurves3d(threadingWire1);
     BRepLib::BuildCurves3d(threadingWire2);
 
-    // Create Threading 
+    // Create Threading
     BRepOffsetAPI_ThruSections aTool(Standard_True);
     aTool.AddWire(threadingWire1);
     aTool.AddWire(threadingWire2);
@@ -154,7 +159,7 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
 
     TopoDS_Shape myThreading = aTool.Shape();
 
-    // Building the Resulting Compound 
+    // Building the Resulting Compound
     TopoDS_Compound aRes;
     BRep_Builder aBuilder;
     aBuilder.MakeCompound(aRes);
@@ -164,11 +169,11 @@ TopoDS_Shape MakeBottle(const Standard_Real myWidth, const Standard_Real myHeigh
     return aRes;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     Viewer vout(50, 50, 500, 500);
 
-    vout << MakeBottle(10,20,3);
+    vout << MakeBottle(10, 20, 3);
 
     if (argc > 1)
     {

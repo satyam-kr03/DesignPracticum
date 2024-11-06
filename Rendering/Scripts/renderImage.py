@@ -1,3 +1,12 @@
+'''
+Description: This script demonstrates how to render an image using Blender's Cycles renderer. It imports an OBJ model, sets up a camera, adds lighting, and renders the scene as an image.
+
+Instructions:
+1. Set the file paths for the OBJ model, output directory, and output image name.
+2. Run the script in Blender's Scripting workspace.
+3. The script will import the OBJ model, set up a camera, add lighting, and render the scene as an image.
+'''
+
 import bpy
 import os
 
